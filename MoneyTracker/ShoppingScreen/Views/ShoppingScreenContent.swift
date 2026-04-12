@@ -8,11 +8,12 @@
 import SwiftUI
 
 /// Shopping tab: content-only screen (header, list type segment, add row, items list). ScrollView and toolbar are owned by MainTabContainerView.
+@MainActor
 struct ShoppingScreenContent: View {
-    @StateObject private var viewModel: ShoppingViewModel
+    @ObservedObject var viewModel: ShoppingViewModel
 
-    init(viewModel: ShoppingViewModel? = nil) {
-        _viewModel = StateObject(wrappedValue: viewModel ?? ShoppingViewModel())
+    init(viewModel: ShoppingViewModel) {
+        _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
     var body: some View {
@@ -118,7 +119,7 @@ struct ShoppingScreenContent: View {
 
 #Preview {
     ScrollView {
-        ShoppingScreenContent()
+        ShoppingScreenContent(viewModel: ShoppingViewModel(store: AppDataStore.preview))
     }
     .background(Color.appBackground)
 }

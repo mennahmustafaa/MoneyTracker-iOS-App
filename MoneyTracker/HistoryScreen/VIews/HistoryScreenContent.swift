@@ -8,11 +8,14 @@
 import SwiftUI
 
 /// History tab: scrollable content only (header, filter, transaction list). ScrollView and toolbar live in MainTabContainerView.
+@MainActor
 struct HistoryScreenContent: View {
-    @StateObject private var viewModel: HistoryViewModel
+    @ObservedObject var viewModel: HistoryViewModel
 
-    init(viewModel: HistoryViewModel? = nil) {
-        _viewModel = StateObject(wrappedValue: viewModel ?? HistoryViewModel())
+    @State private var transactionPendingDelete: HistoryTransaction?
+
+    init(viewModel: HistoryViewModel) {
+        _viewModel = ObservedObject(wrappedValue: viewModel)
     }
 
     var body: some View {
@@ -24,6 +27,28 @@ struct HistoryScreenContent: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 16)
+        .confirmationDialog(
+            "Delete this transaction?",
+            isPresented: Binding(
+                get: { transactionPendingDelete != nil },
+                set: { if !$0 { transactionPendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Yes", role: .destructive) {
+                if let t = transactionPendingDelete {
+                    viewModel.deleteTransaction(id: t.id)
+                }
+                transactionPendingDelete = nil
+            }
+            Button("No", role: .cancel) {
+                transactionPendingDelete = nil
+            }
+        } message: {
+            if let t = transactionPendingDelete {
+                Text("Remove \"\(t.name)\" from your history? This cannot be undone.")
+            }
+        }
     }
 
     private var headerSection: some View {
@@ -74,7 +99,7 @@ struct HistoryScreenContent: View {
             ForEach(Array(viewModel.transactions.enumerated()), id: \.element.id) { index, transaction in
                 HistoryRowView(
                     transaction: transaction,
-                    onDelete: { viewModel.deleteTransaction(id: transaction.id) }
+                    onDelete: { transactionPendingDelete = transaction }
                 )
                 if index < viewModel.transactions.count - 1 {
                     Divider()
@@ -89,7 +114,7 @@ struct HistoryScreenContent: View {
 
 #Preview("History content only") {
     ScrollView {
-        HistoryScreenContent()
+        HistoryScreenContent(viewModel: HistoryViewModel(store: AppDataStore.preview))
     }
     .background(Color.appBackground)
 }
@@ -99,22 +124,19 @@ struct HistoryScreenContent: View {
 }
 
 /// History screen with tab bar: use when you need History + toolbar in one place (e.g. preview).
+@MainActor
 private struct HistoryViewWithToolbar: View {
     @State private var selectedTab: TabItem = .history
 
     var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                ScrollView {
-                    HistoryScreenContent()
-                        .padding(.bottom, TabBarView.height)
-                }
-                .frame(height: geo.size.height - TabBarView.height)
-                .background(Color.appBackground)
-
-                TabBarView(selectedTab: $selectedTab)
-                    .frame(height: TabBarView.height)
-            }
+        ScrollView {
+            HistoryScreenContent(viewModel: HistoryViewModel(store: AppDataStore.preview))
+                .padding(.bottom, 8)
+        }
+        .background(Color.appBackground)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            TabBarView(selectedTab: selectedTab) { selectedTab = $0 }
+                .frame(height: TabBarView.height)
         }
     }
 }

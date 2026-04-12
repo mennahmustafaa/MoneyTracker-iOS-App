@@ -7,14 +7,13 @@
 
 import SwiftUI
 
-/// Bottom navigation destinations; keep in sync with `MainTabContainerView.screenContent(for:)`.
+/// Bottom navigation destinations; keep in sync with `MainTabContainerView.screenContent(for:)`. Profile opens from the Budget header only.
 enum TabItem: Int, CaseIterable {
     case home
     case history
     case shopping
     case goals
     case donate
-    case profile
 
     var title: String {
         switch self {
@@ -23,7 +22,6 @@ enum TabItem: Int, CaseIterable {
         case .shopping: return "Shopping"
         case .goals: return "Goals"
         case .donate: return "Donate"
-        case .profile: return "Profile"
         }
     }
 
@@ -34,7 +32,6 @@ enum TabItem: Int, CaseIterable {
         case .shopping: return "cart"
         case .goals: return "target"
         case .donate: return "heart"
-        case .profile: return "person.crop.circle"
         }
     }
 }
@@ -64,7 +61,9 @@ struct TabBarItemView: View {
 
 /// Single shared bottom toolbar for all tabs. Used by MainTabContainerView only; screens provide content only.
 struct TabBarView: View {
-    @Binding var selectedTab: TabItem
+    let selectedTab: TabItem
+    /// Deferred via `Task` in the button so selection does not mutate parent `@State` during SwiftUI’s layout/update pass (avoids “Modifying state during view update”).
+    let onSelectTab: (TabItem) -> Void
 
     /// Fixed height; container uses this to constrain ScrollView and pad content.
     static let height: CGFloat = 72
@@ -73,7 +72,10 @@ struct TabBarView: View {
         HStack(spacing: 0) {
             ForEach(TabItem.allCases, id: \.rawValue) { tab in
                 Button {
-                    selectedTab = tab
+                    let next = tab
+                    Task { @MainActor in
+                        onSelectTab(next)
+                    }
                 } label: {
                     TabBarItemView(tab: tab, isSelected: selectedTab == tab)
                 }
@@ -91,6 +93,6 @@ struct TabBarView: View {
 #Preview {
     VStack {
         Spacer()
-        TabBarView(selectedTab: .constant(.home))
+        TabBarView(selectedTab: .home, onSelectTab: { _ in })
     }
 }

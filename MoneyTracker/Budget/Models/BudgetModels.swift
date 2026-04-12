@@ -86,3 +86,13 @@ struct Goal: Identifiable {
         self.targetAmount = targetAmount
     }
 }
+
+// MARK: - Preview / placeholders
+
+extension BudgetSummary {
+    static let `default` = BudgetSummary(
+        currentBalance: -1675,
+        income: 600,
+        expenses: 2275
+    )
+}

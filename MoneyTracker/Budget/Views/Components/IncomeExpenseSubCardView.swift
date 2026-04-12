@@ -14,7 +14,7 @@ struct IncomeExpenseSubCardView: View {
     let isIncome: Bool
 
     private var formattedAmount: String {
-        CurrencyFormat.dollarString(from: amount)
+        CurrencyFormat.dollarStringWhole(from: amount)
     }
 
     var body: some View {
@@ -34,7 +34,9 @@ struct IncomeExpenseSubCardView: View {
             Text(formattedAmount)
                 .font(.arimo(size: 20, weight: .bold))
                 .foregroundColor(.whiteText)
-                .frame(width: 51, alignment: .topLeading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 15.98944)
         .padding(.top, 15.98944)

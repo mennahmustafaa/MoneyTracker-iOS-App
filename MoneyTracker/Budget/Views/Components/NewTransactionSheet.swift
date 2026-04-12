@@ -18,6 +18,7 @@ struct NewTransactionSheet: View {
     @State private var paymentMethod: PaymentChoice = .card
     @State private var date = Date()
     @State private var notes = ""
+    @State private var isRecurring = false
     @State private var showEmojiPicker = false
     @FocusState private var focusedField: Field?
 
@@ -31,8 +32,22 @@ struct NewTransactionSheet: View {
         case wallet = "Wallet"
     }
 
-    private static let categories = ["Food", "Fun", "Transport", "Housing", "Freelance", "Other"]
-    private static let emojiChoices = ["💰", "🛒", "🎬", "☕", "🛍️", "🚗", "💼", "🍽️", "⚡", "⛽", "🅿️", "🏠", "🎁", "💳"]
+    private static let incomeCategories = ["Salary", "Freelance", "Investment", "Other"]
+    private static let expenseCategories = ["Food", "Housing", "Transport", "Fun", "Shopping", "Health", "Entertainment", "Other"]
+
+    private static let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+
+    private static let emojiChoices: [String] = [
+        "💰", "💵", "💼", "📈", "💳", "🏦",
+        "🛒", "🎬", "☕", "🛍️", "🚗", "🍽️",
+        "⚡", "⛽", "🅿️", "🏠", "🎁", "📱",
+        "✈️", "🏥", "💊", "🎓", "🎯", "❤️",
+        "🧾", "💸", "🪙", "📊", "🛟", "🎮"
+    ]
+
+    private var activeCategories: [String] {
+        isExpenseSelected ? Self.expenseCategories : Self.incomeCategories
+    }
 
     private var parsedAmount: Double? {
         let cleaned = amountText.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
@@ -45,29 +60,31 @@ struct NewTransactionSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            dragHandle
             headerBar
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     transactionTypeSegment
-                    labeledField(title: "Amount") {
+                    labeledField(title: "AMOUNT") {
                         amountField
                     }
-                    labeledField(title: "Description") {
+                    labeledField(title: "DESCRIPTION") {
                         descriptionField
                     }
-                    labeledField(title: "Icon Emoji") {
+                    labeledField(title: "ICON EMOJI") {
                         emojiRow
                     }
-                    labeledField(title: "Category") {
-                        categoryField
+                    labeledField(title: "CATEGORY") {
+                        categoryChips
                     }
-                    labeledField(title: "Payment Method") {
+                    labeledField(title: "PAYMENT METHOD") {
                         paymentMethodRow
                     }
-                    labeledField(title: "Date") {
+                    labeledField(title: "DATE") {
                         dateField
                     }
-                    labeledField(title: "Notes (Optional)") {
+                    recurringToggle
+                    labeledField(title: "NOTES (OPTIONAL)") {
                         notesField
                     }
                     addButton
@@ -80,37 +97,46 @@ struct NewTransactionSheet: View {
         .sheet(isPresented: $showEmojiPicker) {
             emojiPickerSheet
         }
+        .onChange(of: isExpenseSelected) { _, _ in
+            let valid = isExpenseSelected ? Self.expenseCategories : Self.incomeCategories
+            if !valid.contains(category) {
+                category = ""
+                iconEmoji = "💰"
+            }
+        }
+    }
+
+    private var dragHandle: some View {
+        Capsule()
+            .fill(Color.formPlaceholder)
+            .frame(width: 36, height: 3.98438)
+            .padding(.top, 8)
     }
 
     private var headerBar: some View {
-        ZStack(alignment: .center) {
+        HStack(alignment: .center) {
             Text("New Transaction")
                 .font(.inter(size: 28, weight: .bold))
                 .kerning(0.38281)
                 .foregroundColor(.black)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 6)
-            HStack {
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Image("cancelIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .frame(width: 31.99219, height: 31.99219)
-                        .background(Color.segmentTrackBackground)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                dismiss()
+            } label: {
+                Image("cancelIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                    .frame(width: 31.99219, height: 31.99219)
+                    .background(Color.segmentTrackBackground)
+                    .clipShape(Circle())
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 19.99219)
-        .padding(.top, 12)
+        .padding(.top, 4)
         .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, minHeight: 52, alignment: .center)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .center)
     }
 
     private var transactionTypeSegment: some View {
@@ -138,16 +164,9 @@ struct NewTransactionSheet: View {
                 .padding(.top, 10.48438)
                 .padding(.bottom, 8.98438)
                 .background(
-                    Group {
-                        if isSelected {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.tabBarBackground)
-                                .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
-                                .shadow(color: .black.opacity(0.1), radius: 1.5, x: 0, y: 1)
-                        } else {
-                            Color.clear
-                        }
-                    }
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected ? Color.tabBarBackground : Color.clear)
+                        .shadow(color: isSelected ? Color.black.opacity(0.08) : .clear, radius: 1, x: 0, y: 1)
                 )
         }
         .buttonStyle(.plain)
@@ -201,9 +220,7 @@ struct NewTransactionSheet: View {
         } label: {
             HStack {
                 Text(iconEmoji)
-                    .font(.inter(size: 32))
-                    .kerning(0.40625)
-                    .multilineTextAlignment(.center)
+                    .font(.system(size: 32))
                     .foregroundColor(.black)
                 Spacer()
                 Text("Tap to change")
@@ -219,25 +236,29 @@ struct NewTransactionSheet: View {
         .buttonStyle(.plain)
     }
 
-    private var categoryField: some View {
-        Menu {
-            ForEach(Self.categories, id: \.self) { c in
-                Button(c) { category = c }
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(activeCategories, id: \.self) { name in
+                    let selected = category == name
+                    Button {
+                        category = name
+                        iconEmoji = Self.suggestedEmoji(category: name, isExpense: isExpenseSelected)
+                    } label: {
+                        Text(name)
+                            .font(.inter(size: 14, weight: .semibold))
+                            .foregroundColor(selected ? .white : .black)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(selected ? Color.black : Color.formFieldFill)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-        } label: {
-            HStack {
-                Text(category.isEmpty ? "Select category" : category)
-                    .font(.inter(size: 17))
-                    .foregroundColor(category.isEmpty ? Color.formPlaceholder : .black)
-                Spacer()
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color.formLabelMuted)
-            }
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: 43.5, maxHeight: 43.5, alignment: .leading)
-            .background(Color.formFieldFill)
-            .cornerRadius(10)
+            .padding(.vertical, 4)
         }
     }
 
@@ -262,20 +283,8 @@ struct NewTransactionSheet: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10.5)
                 .padding(.bottom, 13)
-                .background(selected ? Color.backgroundBlack : Color.formFieldFill)
+                .background(selected ? Color.black : Color.formFieldFill)
                 .cornerRadius(10)
-                .shadow(
-                    color: selected ? Color.black.opacity(0.1) : .clear,
-                    radius: selected ? 2 : 0,
-                    x: 0,
-                    y: selected ? 2 : 0
-                )
-                .shadow(
-                    color: selected ? Color.black.opacity(0.1) : .clear,
-                    radius: selected ? 3 : 0,
-                    x: 0,
-                    y: selected ? 4 : 0
-                )
         }
         .buttonStyle(.plain)
     }
@@ -296,6 +305,16 @@ struct NewTransactionSheet: View {
         .frame(maxWidth: .infinity, minHeight: 49.47656, maxHeight: 49.47656, alignment: .leading)
         .background(Color.formFieldFill)
         .cornerRadius(10)
+    }
+
+    private var recurringToggle: some View {
+        Toggle(isOn: $isRecurring) {
+            Text("Recurring transaction")
+                .font(.inter(size: 17))
+                .foregroundColor(.black)
+        }
+        .tint(Color.black)
+        .padding(.vertical, 4)
     }
 
     private var notesField: some View {
@@ -322,10 +341,10 @@ struct NewTransactionSheet: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 15.48438)
                 .padding(.bottom, 15.96094)
-                .background(Color.backgroundBlack)
-                .cornerRadius(14)
-                .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 4)
-                .shadow(color: .black.opacity(0.1), radius: 7.5, x: 0, y: 10)
+                .background(Color.black)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.1), radius: 7.5, x: 0, y: 10)
         }
         .buttonStyle(.plain)
         .disabled(!canSubmit)
@@ -336,19 +355,20 @@ struct NewTransactionSheet: View {
     private var emojiPickerSheet: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 52))], spacing: 12) {
+                LazyVGrid(columns: Self.emojiColumns, spacing: 12) {
                     ForEach(Self.emojiChoices, id: \.self) { e in
                         Button {
                             iconEmoji = e
                             showEmojiPicker = false
                         } label: {
                             Text(e)
-                                .font(.system(size: 36))
-                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .font(.system(size: 32))
+                                .frame(minWidth: 44, minHeight: 44)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding()
+                .padding(16)
             }
             .navigationTitle("Choose emoji")
             .navigationBarTitleDisplayMode(.inline)
@@ -361,22 +381,50 @@ struct NewTransactionSheet: View {
         .presentationDetents([.medium])
     }
 
+    private static func suggestedEmoji(category: String, isExpense: Bool) -> String {
+        if isExpense {
+            switch category {
+            case "Food": return "🍽️"
+            case "Housing": return "🏠"
+            case "Transport": return "🚗"
+            case "Fun": return "🎉"
+            case "Shopping": return "🛍️"
+            case "Health": return "💊"
+            case "Entertainment": return "🎬"
+            case "Other": return "💳"
+            default: return "💰"
+            }
+        } else {
+            switch category {
+            case "Salary": return "💵"
+            case "Freelance": return "💼"
+            case "Investment": return "📈"
+            case "Other": return "💰"
+            default: return "💰"
+            }
+        }
+    }
+
     private func submit() {
         guard let amt = parsedAmount, amt > 0 else { return }
         let title = descriptionText.trimmingCharacters(in: .whitespaces)
+        let noteStr = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cat = category.isEmpty ? "Other" : category
         viewModel.addTransaction(
             amount: amt,
             isIncome: !isExpenseSelected,
             title: title.isEmpty ? (isExpenseSelected ? "Expense" : "Income") : title,
             icon: iconEmoji,
-            category: category.isEmpty ? "Other" : category,
+            category: cat,
             paymentMethod: paymentMethod.rawValue,
-            date: date
+            date: date,
+            notes: noteStr.isEmpty ? nil : noteStr,
+            isRecurring: isRecurring
         )
         dismiss()
     }
 }
 
 #Preview {
-    NewTransactionSheet(viewModel: BudgetViewModel())
+    NewTransactionSheet(viewModel: BudgetViewModel(store: AppDataStore.preview))
 }

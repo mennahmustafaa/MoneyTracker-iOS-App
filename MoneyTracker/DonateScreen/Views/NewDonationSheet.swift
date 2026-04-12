@@ -2,7 +2,7 @@
 //  NewDonationSheet.swift
 //  MoneyTracker
 //
-//  Modal form to add a donation (sheet from `DonateScreenContent`).
+//  Modal form to add a donation (sheet from `MainTabContainerView`).
 //
 
 import SwiftUI
@@ -15,9 +15,11 @@ struct NewDonationSheet: View {
     @State private var amountText = ""
     @State private var organizationText = ""
     @State private var category = ""
+    @State private var iconEmoji = "❤️"
     @State private var isRecurring = false
     @State private var date = Date()
     @State private var notes = ""
+    @State private var showEmojiPicker = false
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -25,6 +27,23 @@ struct NewDonationSheet: View {
     }
 
     private static let categories = ["Healthcare", "Education", "Hunger Relief", "Animal Welfare", "Other"]
+
+    private static let categoryDefaultEmoji: [String: String] = [
+        "Healthcare": "🏥",
+        "Education": "📚",
+        "Hunger Relief": "🍞",
+        "Animal Welfare": "🐾",
+        "Other": "❤️"
+    ]
+
+    private static let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+
+    private static let donationEmojiChoices: [String] = [
+        "❤️", "🏥", "📚", "🍞", "🐾", "🌍",
+        "🙏", "💉", "🎗️", "🤝", "💊", "🥫",
+        "🧸", "✨", "💝", "🫶", "🏠", "👶",
+        "🩺", "📖", "🌾", "🐕", "⭐️", "💐"
+    ]
 
     private var parsedAmount: Double? {
         let cleaned = amountText.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
@@ -48,7 +67,10 @@ struct NewDonationSheet: View {
                         organizationField
                     }
                     labeledField(title: "CATEGORY") {
-                        categoryField
+                        categoryChips
+                    }
+                    labeledField(title: "ICON EMOJI") {
+                        emojiRow
                     }
                     recurringRow
                     labeledField(title: "DATE") {
@@ -64,6 +86,9 @@ struct NewDonationSheet: View {
             }
         }
         .background(Color.tabBarBackground)
+        .sheet(isPresented: $showEmojiPicker) {
+            emojiPickerSheet
+        }
     }
 
     private var dragHandle: some View {
@@ -141,26 +166,81 @@ struct NewDonationSheet: View {
         .cornerRadius(10)
     }
 
-    private var categoryField: some View {
-        Menu {
-            ForEach(Self.categories, id: \.self) { c in
-                Button(c) { category = c }
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Self.categories, id: \.self) { name in
+                    let selected = category == name
+                    Button {
+                        category = name
+                        iconEmoji = Self.categoryDefaultEmoji[name] ?? "❤️"
+                    } label: {
+                        Text(name)
+                            .font(.inter(size: 14, weight: .semibold))
+                            .foregroundColor(selected ? .white : .black)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(selected ? Color.black : Color.formFieldFill)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private var emojiRow: some View {
+        Button {
+            showEmojiPicker = true
         } label: {
             HStack {
-                Text(category.isEmpty ? "Select category" : category)
-                    .font(.inter(size: 17))
-                    .foregroundColor(category.isEmpty ? Color.formPlaceholder : .black)
+                Text(iconEmoji)
+                    .font(.system(size: 32))
+                    .foregroundColor(.black)
                 Spacer()
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color.formLabelMuted)
+                Text("Tap to change")
+                    .font(.inter(size: 15))
+                    .foregroundColor(Color.formPlaceholder)
             }
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: 43.5, maxHeight: 43.5, alignment: .leading)
+            .padding(.horizontal, 15.98438)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 71.97656, maxHeight: 71.97656, alignment: .center)
             .background(Color.formFieldFill)
             .cornerRadius(10)
         }
+        .buttonStyle(.plain)
+    }
+
+    private var emojiPickerSheet: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: Self.emojiColumns, spacing: 12) {
+                    ForEach(Self.donationEmojiChoices, id: \.self) { e in
+                        Button {
+                            iconEmoji = e
+                            showEmojiPicker = false
+                        } label: {
+                            Text(e)
+                                .font(.system(size: 32))
+                                .frame(minWidth: 44, minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(16)
+            }
+            .navigationTitle("Choose emoji")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { showEmojiPicker = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 
     private var recurringRow: some View {
@@ -210,13 +290,12 @@ struct NewDonationSheet: View {
             Text("Add Donation")
                 .font(.inter(size: 17, weight: .semibold))
                 .multilineTextAlignment(.center)
-                .foregroundColor(Color.black)
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 15.48438)
                 .padding(.bottom, 15.96094)
                 .background(Color.black)
-                .cornerRadius(14)
-
+                .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
         .disabled(!canSubmit)
@@ -226,17 +305,19 @@ struct NewDonationSheet: View {
 
     private func submit() {
         guard let amt = parsedAmount, amt > 0 else { return }
+        let trimmedEmoji = iconEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
         viewModel.addDonation(
             amount: amt,
             organization: organizationText,
-            category: category,
+            category: category.isEmpty ? "Other" : category,
             isRecurring: isRecurring,
-            date: date
+            date: date,
+            iconEmoji: trimmedEmoji.isEmpty ? nil : trimmedEmoji
         )
         dismiss()
     }
 }
 
 #Preview {
-    NewDonationSheet(viewModel: DonateViewModel())
+    NewDonationSheet(viewModel: DonateViewModel(store: AppDataStore.preview))
 }

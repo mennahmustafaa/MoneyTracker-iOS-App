@@ -14,9 +14,11 @@ final class SignInViewModel: ObservableObject {
     @Published var showPassword: Bool = false
 
     private let session: SessionViewModel
+    private let onSignUp: () -> Void
 
-    init(session: SessionViewModel) {
+    init(session: SessionViewModel, onSignUp: @escaping () -> Void = {}) {
         self.session = session
+        self.onSignUp = onSignUp
     }
 
     var canSubmit: Bool {
@@ -38,5 +40,7 @@ final class SignInViewModel: ObservableObject {
 
     func forgotPassword() {}
 
-    func signUp() {}
+    func signUp() {
+        onSignUp()
+    }
 }

@@ -8,13 +8,13 @@
 import Foundation
 
 /// Which tab is active in Shopping: list vs wishlist.
-enum ShoppingSegment: String, CaseIterable {
+enum ShoppingSegment: String, Codable, CaseIterable {
     case shoppingList = "Shopping List"
     case wishlist = "Wishlist"
 }
 
 /// Single shopping or wishlist line with completion state.
-struct ShoppingItem: Identifiable {
+struct ShoppingItem: Identifiable, Codable {
     let id: UUID
     let title: String
     let segment: ShoppingSegment

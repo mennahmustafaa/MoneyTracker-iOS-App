@@ -8,7 +8,7 @@
 import Foundation
 
 /// Rich goal card model: amounts, deadline copy, and progress (Goals tab).
-struct GoalProgressItem: Identifiable {
+struct GoalProgressItem: Identifiable, Codable {
     let id: UUID
     let icon: String
     let title: String

@@ -15,6 +15,7 @@ struct HistoryTransaction: Identifiable {
     let date: String
     let amount: Double
     let isIncome: Bool
+    let isRecurring: Bool
 
     init(
         id: UUID = UUID(),
@@ -22,7 +23,8 @@ struct HistoryTransaction: Identifiable {
         category: String,
         date: String,
         amount: Double,
-        isIncome: Bool
+        isIncome: Bool,
+        isRecurring: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -30,5 +32,6 @@ struct HistoryTransaction: Identifiable {
         self.date = date
         self.amount = amount
         self.isIncome = isIncome
+        self.isRecurring = isRecurring
     }
 }

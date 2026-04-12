@@ -5,6 +5,7 @@
 
 import SwiftUI
 
+@MainActor
 struct SignInView: View {
     @StateObject private var viewModel: SignInViewModel
 
@@ -14,8 +15,8 @@ struct SignInView: View {
         case email, password
     }
 
-    init(session: SessionViewModel) {
-        _viewModel = StateObject(wrappedValue: SignInViewModel(session: session))
+    init(session: SessionViewModel, onSignUp: @escaping () -> Void = {}) {
+        _viewModel = StateObject(wrappedValue: SignInViewModel(session: session, onSignUp: onSignUp))
     }
 
     var body: some View {
@@ -152,34 +153,21 @@ struct SignInView: View {
 
     private var signInButton: some View {
         Button {
+            guard viewModel.canSubmit else { return }
             viewModel.signIn()
         } label: {
-            ZStack {
-                Capsule()
-                    .fill(Color.signInTitle)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .white.opacity(0), location: 0),
-                                .init(color: .white.opacity(0.1), location: 0.5),
-                                .init(color: .white.opacity(0), location: 1)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                Text("Sign In")
-                    .font(.inter(size: 16, weight: .semibold))
-                    .foregroundColor(.whiteText)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            Text("Sign In")
+                .font(.inter(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(Color.black)
+                .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+     //   .opacity(viewModel.canSubmit ? 1 : 0.45)
+      // .allowsHitTesting(viewModel.canSubmit)
         .shadow(color: .black.opacity(0.14), radius: 12, x: 0, y: 10)
-        .disabled(!viewModel.canSubmit)
-        .opacity(viewModel.canSubmit ? 1 : 0.45)
     }
 
     private var orDivider: some View {
@@ -201,21 +189,30 @@ struct SignInView: View {
             viewModel.continueWithGoogle()
         } label: {
             HStack(spacing: 12) {
-                Image("GoogleIcon")
-                    .resizable()
-                    .renderingMode(.original)
-                    .scaledToFit()
-                    .frame(width: 22, height: 22)
+                googleMark
                 Text("Continue with Google")
                     .font(.inter(size: 16, weight: .medium))
-                    .foregroundColor(.whiteText)
+                    .foregroundColor(Color.signInTitle)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color.backgroundBlack)
+            .background(Color.tabBarBackground)
             .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .inset(by: 0.75)
+                    .stroke(Color.signInFieldBorder, lineWidth: 1.5)
+            )
         }
         .buttonStyle(.plain)
+    }
+
+    private var googleMark: some View {
+        Image("GoogleIcon")
+            .resizable()
+            .renderingMode(.original)
+            .scaledToFit()
+            .frame(width: 20, height: 20)
     }
 
     private var signUpFooter: some View {

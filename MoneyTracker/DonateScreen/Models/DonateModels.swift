@@ -8,7 +8,7 @@
 import Foundation
 
 /// Row in “Impact by Cause” with amount and progress toward a target (0…1).
-struct ImpactCause: Identifiable {
+struct ImpactCause: Identifiable, Codable {
     let id: UUID
     let name: String
     let amount: Double
@@ -24,13 +24,15 @@ struct ImpactCause: Identifiable {
 }
 
 /// Past donation line for the Donate history list.
-struct DonationRecord: Identifiable {
+struct DonationRecord: Identifiable, Codable {
     let id: UUID
     let organization: String
     let cause: String
     let date: String
     let frequency: String
     let amount: Double
+    /// Optional emoji chosen in the sheet; older saved data omits this key.
+    let iconEmoji: String?
 
     init(
         id: UUID = UUID(),
@@ -38,7 +40,8 @@ struct DonationRecord: Identifiable {
         cause: String,
         date: String,
         frequency: String,
-        amount: Double
+        amount: Double,
+        iconEmoji: String? = nil
     ) {
         self.id = id
         self.organization = organization
@@ -46,5 +49,6 @@ struct DonationRecord: Identifiable {
         self.date = date
         self.frequency = frequency
         self.amount = amount
+        self.iconEmoji = iconEmoji
     }
 }

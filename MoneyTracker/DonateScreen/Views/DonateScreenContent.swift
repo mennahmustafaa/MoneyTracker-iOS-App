@@ -8,12 +8,14 @@
 import SwiftUI
 
 /// Donate tab: content-only screen (header, quote, summary, causes, donation history). Shared toolbar is owned by MainTabContainerView.
+@MainActor
 struct DonateScreenContent: View {
-    @StateObject private var viewModel: DonateViewModel
-    @State private var showNewDonation = false
+    @ObservedObject var viewModel: DonateViewModel
+    var onAddDonationTap: () -> Void
 
-    init(viewModel: DonateViewModel? = nil) {
-        _viewModel = StateObject(wrappedValue: viewModel ?? DonateViewModel())
+    init(viewModel: DonateViewModel, onAddDonationTap: @escaping () -> Void = {}) {
+        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.onAddDonationTap = onAddDonationTap
     }
 
     var body: some View {
@@ -31,10 +33,6 @@ struct DonateScreenContent: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .sheet(isPresented: $showNewDonation) {
-            NewDonationSheet(viewModel: viewModel)
-                .presentationDragIndicator(.hidden)
-        }
     }
 
     private var headerSection: some View {
@@ -44,7 +42,7 @@ struct DonateScreenContent: View {
                 .foregroundColor(.primaryText)
             Spacer()
             Button {
-                showNewDonation = true
+                onAddDonationTap()
             } label: {
                 ZStack {
                     Circle().fill(Color.backgroundBlack)
@@ -95,7 +93,7 @@ struct DonateScreenContent: View {
 
 #Preview {
     ScrollView {
-        DonateScreenContent()
+        DonateScreenContent(viewModel: DonateViewModel(store: AppDataStore.preview))
     }
     .background(Color.appBackground)
 }

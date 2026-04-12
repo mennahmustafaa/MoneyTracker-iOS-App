@@ -2,44 +2,71 @@
 //  GoalsViewModel.swift
 //  MoneyTracker
 //
-//  Created by Mennah on 16/02/2026.
-//
 
 import Combine
 import Foundation
 
 @MainActor
-/// Goals tab: list of `GoalProgressItem` cards (sample data by default).
 final class GoalsViewModel: ObservableObject {
-    @Published var goals: [GoalProgressItem]
+    private let store: AppDataStore
+    private var cancellables = Set<AnyCancellable>()
 
-    init(goals: [GoalProgressItem]? = nil) {
-        self.goals = goals ?? Self.defaultGoals
+    init(store: AppDataStore) {
+        self.store = store
+        store.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
-    // MARK: - Sample data
+    var goals: [GoalProgressItem] { store.goals }
 
-    private static let defaultGoals: [GoalProgressItem] = [
-        GoalProgressItem(
-            icon: "✈️",
-            title: "Trip to Japan",
-            deadlineText: "Deadline passed",
-            currentAmount: 1200,
-            targetAmount: 3000
-        ),
-        GoalProgressItem(
-            icon: "💻",
-            title: "New Laptop",
-            deadlineText: "Deadline passed",
-            currentAmount: 800,
-            targetAmount: 1500
-        ),
-        GoalProgressItem(
-            icon: "🛡️",
-            title: "Emergency Fund",
-            deadlineText: "7 days remaining",
-            currentAmount: 5500,
-            targetAmount: 10000
+    private static let newGoalDeadlineFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateStyle = .medium
+        return f
+    }()
+
+    func addGoal(icon: String, title: String, targetAmount: Double, deadline: Date) {
+        let deadlineText = Self.newGoalDeadlineFormatter.string(from: deadline)
+        let item = GoalProgressItem(
+            icon: icon,
+            title: title,
+            deadlineText: deadlineText,
+            currentAmount: 0,
+            targetAmount: max(targetAmount, 0.01)
         )
-    ]
+        var next = store.goals
+        next.insert(item, at: 0)
+        store.setGoals(next)
+    }
+
+    /// Adds `amount` toward the goal (capped at target). Persists via `AppDataStore`.
+    func addContribution(to id: UUID, amount: Double) {
+        guard amount > 0 else { return }
+        var next = store.goals
+        guard let i = next.firstIndex(where: { $0.id == id }) else { return }
+        let g = next[i]
+        let newCurrent = min(g.currentAmount + amount, g.targetAmount)
+        next[i] = GoalProgressItem(
+            id: g.id,
+            icon: g.icon,
+            title: g.title,
+            deadlineText: g.deadlineText,
+            currentAmount: newCurrent,
+            targetAmount: g.targetAmount
+        )
+        store.setGoals(next)
+    }
+
+    func addProgress(to id: UUID, delta: Double = 100) {
+        addContribution(to: id, amount: delta)
+    }
+
+    func deleteGoal(id: UUID) {
+        var next = store.goals
+        next.removeAll { $0.id == id }
+        store.setGoals(next)
+    }
 }

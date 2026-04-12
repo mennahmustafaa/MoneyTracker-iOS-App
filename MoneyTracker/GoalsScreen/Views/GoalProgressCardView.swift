@@ -10,6 +10,18 @@ import SwiftUI
 /// Large card for one goal: icon, progress bar, current / remaining / target.
 struct GoalProgressCardView: View {
     let goal: GoalProgressItem
+    var onPlusTap: () -> Void
+    var onDeleteTap: () -> Void
+
+    init(
+        goal: GoalProgressItem,
+        onPlusTap: @escaping () -> Void = {},
+        onDeleteTap: @escaping () -> Void = {}
+    ) {
+        self.goal = goal
+        self.onPlusTap = onPlusTap
+        self.onDeleteTap = onDeleteTap
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15.98942) {
@@ -35,24 +47,18 @@ struct GoalProgressCardView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(goal.title)
-                    .font(.arimo(size: 20, weight: .bold))
+                    .font(.inter(size: 20, weight: .bold))
                     .foregroundColor(.primaryText)
                 Text(goal.deadlineText)
-                    .font(.arimo(size: 13))
+                    .font(.inter(size: 13))
                     .foregroundColor(.secondaryText)
             }
 
             Spacer(minLength: 0)
 
-            ZStack {
-                Circle()
-                    .fill(Color.backgroundBlack)
-                    .frame(width: 35.99536, height: 35.99536)
-                    .shadow(color: Color.shadowBlack10, radius: 2, x: 0, y: 2)
-                    .shadow(color: Color.shadowBlack10, radius: 3, x: 0, y: 4)
-                Image(systemName: "plus")
-                    .font(.system(size: 17.99768, weight: .bold))
-                    .foregroundColor(.whiteText)
+            HStack(spacing: 8) {
+                GoalsDeleteButton(action: onDeleteTap)
+                GoalsPlusButton(action: onPlusTap)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 59.97952, maxHeight: 59.97952, alignment: .top)
@@ -60,17 +66,18 @@ struct GoalProgressCardView: View {
 
     private var progressSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text("Progress")
-                    .font(.arimo(size: 13))
+                    .font(.inter(size: 13))
                     .foregroundColor(.secondaryText)
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
                 Text("\(goal.progressPercent)%")
-                    .font(.arimo(size: 15, weight: .bold))
+                    .font(.inter(size: 15, weight: .bold))
                     .foregroundColor(.primaryText)
-                    .frame(width: 31, alignment: .topLeading)
+                    .lineLimit(1)
+                    .layoutPriority(1)
             }
-            .frame(maxWidth: .infinity, minHeight: 22.49232, maxHeight: 22.49232, alignment: .center)
+            .frame(maxWidth: .infinity, alignment: .center)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -86,47 +93,55 @@ struct GoalProgressCardView: View {
     }
 
     private var amountsSection: some View {
-        HStack {
+        HStack(alignment: .top, spacing: 4) {
             amountColumn(
                 title: "Current",
                 value: CurrencyFormat.dollarString(from: goal.currentAmount),
                 valueColor: .primaryText,
-                valueAlignment: .topLeading
+                columnAlignment: .leading
             )
-            Spacer(minLength: 0)
             amountColumn(
                 title: "Remaining",
                 value: CurrencyFormat.dollarString(from: goal.remainingAmount),
                 valueColor: .donateAccentRed,
-                valueAlignment: .top
+                columnAlignment: .center
             )
-            Spacer(minLength: 0)
             amountColumn(
                 title: "Target",
                 value: CurrencyFormat.dollarString(from: goal.targetAmount),
                 valueColor: .primaryText,
-                valueAlignment: .topTrailing
+                columnAlignment: .trailing
             )
         }
-        .frame(maxWidth: .infinity, minHeight: 45.00376, maxHeight: 45.00376, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
+    /// Each column is equal width; label + value share the same horizontal alignment (matches design).
     private func amountColumn(
         title: String,
         value: String,
         valueColor: Color,
-        valueAlignment: Alignment
+        columnAlignment: HorizontalAlignment
     ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: columnAlignment, spacing: 4) {
             Text(title)
-                .font(.arimo(size: 13))
-                .multilineTextAlignment(.center)
+                .font(.inter(size: 13))
                 .foregroundColor(.secondaryText)
             Text(value)
-                .font(.arimo(size: 17, weight: .bold))
-                .multilineTextAlignment(.center)
+                .font(.inter(size: 17, weight: .bold))
                 .foregroundColor(valueColor)
-                .frame(width: 71, alignment: valueAlignment)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .multilineTextAlignment(textAlignment(for: columnAlignment))
+        }
+        .frame(maxWidth: .infinity, alignment: Alignment(horizontal: columnAlignment, vertical: .top))
+    }
+
+    private func textAlignment(for column: HorizontalAlignment) -> TextAlignment {
+        switch column {
+        case .leading: return .leading
+        case .trailing: return .trailing
+        default: return .center
         }
     }
 }

@@ -148,14 +148,23 @@ struct DonationRecordRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 11.99208) {
-            Circle()
-                .fill(Color.donateAccentRedTint)
-                .frame(width: 39.99272, height: 39.99272)
-                .overlay(
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 17.99768))
-                        .foregroundColor(.donateAccentRed)
-                )
+            Group {
+                if let emoji = donation.iconEmoji, !emoji.isEmpty {
+                    Text(emoji)
+                        .font(.system(size: 22))
+                        .frame(width: 39.99272, height: 39.99272)
+                        .background(Circle().fill(Color.donateAccentRedTint))
+                } else {
+                    Circle()
+                        .fill(Color.donateAccentRedTint)
+                        .frame(width: 39.99272, height: 39.99272)
+                        .overlay(
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 17.99768))
+                                .foregroundColor(.donateAccentRed)
+                        )
+                }
+            }
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack {

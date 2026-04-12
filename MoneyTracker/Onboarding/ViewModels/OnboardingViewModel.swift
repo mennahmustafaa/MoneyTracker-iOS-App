@@ -21,14 +21,8 @@ struct OnboardingFeature: Identifiable {
 }
 
 @MainActor
-/// First-launch onboarding; completion is stored in `UserDefaults`.
+/// Static copy and feature grid for onboarding (no persistence — shown each app launch until **Get Started**).
 final class OnboardingViewModel: ObservableObject {
-    private enum Keys {
-        static let completed = "hasCompletedOnboarding"
-    }
-
-    @Published private(set) var hasCompletedOnboarding: Bool
-
     let features: [OnboardingFeature] = [
         OnboardingFeature(title: "Shopping", assetName: "shopIcon"),
         OnboardingFeature(title: "Donation", assetName: "heartIconn"),
@@ -42,21 +36,5 @@ final class OnboardingViewModel: ObservableObject {
         "Make every dollar count"
     ]
 
-    private let userDefaults: UserDefaults
-
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
-        self.hasCompletedOnboarding = userDefaults.bool(forKey: Keys.completed)
-    }
-
-    func completeOnboarding() {
-        userDefaults.set(true, forKey: Keys.completed)
-        hasCompletedOnboarding = true
-    }
-
-    /// Clears the completed flag (e.g. Profile → Log out) so onboarding shows again.
-    func resetOnboarding() {
-        userDefaults.set(false, forKey: Keys.completed)
-        hasCompletedOnboarding = false
-    }
+    init() {}
 }

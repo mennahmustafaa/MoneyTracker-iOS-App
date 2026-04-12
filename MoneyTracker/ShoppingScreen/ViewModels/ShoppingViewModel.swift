@@ -2,28 +2,27 @@
 //  ShoppingViewModel.swift
 //  MoneyTracker
 //
-//  Created by Mennah on 16/02/2026.
-//
 
 import Combine
 import Foundation
 
 @MainActor
-/// Shopping list + wishlist items for the Shopping tab.
 final class ShoppingViewModel: ObservableObject {
-    @Published var selectedSegment: ShoppingSegment
-    @Published var draftItemText: String
-    @Published var items: [ShoppingItem]
+    private let store: AppDataStore
+    private var cancellables = Set<AnyCancellable>()
 
-    init(
-        selectedSegment: ShoppingSegment = .shoppingList,
-        draftItemText: String = "",
-        items: [ShoppingItem]? = nil
-    ) {
-        self.selectedSegment = selectedSegment
-        self.draftItemText = draftItemText
-        self.items = items ?? Self.defaultItems
+    @Published var selectedSegment: ShoppingSegment = .shoppingList
+    @Published var draftItemText: String = ""
+
+    init(store: AppDataStore) {
+        self.store = store
+        store.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
+
+    var items: [ShoppingItem] { store.shoppingItems }
 
     var filteredItems: [ShoppingItem] {
         items.filter { $0.segment == selectedSegment }
@@ -32,34 +31,22 @@ final class ShoppingViewModel: ObservableObject {
     func addItem() {
         let trimmed = draftItemText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        items.append(
-            ShoppingItem(
-                title: trimmed,
-                segment: selectedSegment,
-                isCompleted: false
-            )
-        )
+        var next = store.shoppingItems
+        next.append(ShoppingItem(title: trimmed, segment: selectedSegment, isCompleted: false))
+        store.setShoppingItems(next)
         draftItemText = ""
     }
 
     func toggleItem(_ item: ShoppingItem) {
-        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
-        items[index].isCompleted.toggle()
+        var next = store.shoppingItems
+        guard let index = next.firstIndex(where: { $0.id == item.id }) else { return }
+        next[index].isCompleted.toggle()
+        store.setShoppingItems(next)
     }
 
     func deleteItem(_ item: ShoppingItem) {
-        items.removeAll { $0.id == item.id }
+        var next = store.shoppingItems
+        next.removeAll { $0.id == item.id }
+        store.setShoppingItems(next)
     }
-
-    // MARK: - Sample data
-
-    private static let defaultItems: [ShoppingItem] = [
-        ShoppingItem(title: "Milk", segment: .shoppingList, isCompleted: false),
-        ShoppingItem(title: "Bread", segment: .shoppingList, isCompleted: false),
-        ShoppingItem(title: "Eggs", segment: .shoppingList, isCompleted: true),
-        ShoppingItem(title: "Coffee", segment: .shoppingList, isCompleted: false),
-        ShoppingItem(title: "Apples", segment: .shoppingList, isCompleted: false),
-        ShoppingItem(title: "New Blender", segment: .wishlist, isCompleted: false),
-        ShoppingItem(title: "Office Chair", segment: .wishlist, isCompleted: false)
-    ]
 }

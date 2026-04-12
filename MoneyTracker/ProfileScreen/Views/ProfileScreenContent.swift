@@ -6,6 +6,7 @@
 import SwiftUI
 
 /// Profile tab: user card, finances, payments, activity, settings, log out. Tab bar is provided by `MainTabContainerView`.
+@MainActor
 struct ProfileScreenContent: View {
     @ObservedObject var viewModel: ProfileViewModel
 
@@ -268,7 +269,7 @@ struct ProfileScreenContent: View {
 
 #Preview {
     ScrollView {
-        ProfileScreenContent(viewModel: ProfileViewModel(onLogout: {}))
+        ProfileScreenContent(viewModel: ProfileViewModel(store: AppDataStore.preview, onLogout: {}))
     }
     .background(Color.appBackground)
 }

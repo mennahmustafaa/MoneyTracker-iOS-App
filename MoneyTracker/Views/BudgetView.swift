@@ -8,11 +8,24 @@
 import SwiftUI
 
 /// Home tab: budget card, header actions, and recent records. ScrollView and tab bar live in `MainTabContainerView`.
+@MainActor
 struct BudgetScreenContent: View {
     @ObservedObject var viewModel: BudgetViewModel
-    @Binding var selectedTab: TabItem
+    var onOpenProfile: () -> Void
+    var onViewAllTransactions: () -> Void
+
     @State private var showNewTransaction = false
     @State private var showBudgetCharts = false
+
+    init(
+        viewModel: BudgetViewModel,
+        onOpenProfile: @escaping () -> Void = {},
+        onViewAllTransactions: @escaping () -> Void = {}
+    ) {
+        _viewModel = ObservedObject(wrappedValue: viewModel)
+        self.onOpenProfile = onOpenProfile
+        self.onViewAllTransactions = onViewAllTransactions
+    }
 
     private var recordsSecondary: Color {
         Color(red: 0.56, green: 0.56, blue: 0.58)
@@ -69,11 +82,18 @@ struct BudgetScreenContent: View {
             }
             .buttonStyle(.plain)
             Button {
-                selectedTab = .profile
+                onOpenProfile()
             } label: {
-                Image(systemName: "person.circle")
-                    .font(.system(size: 32, weight: .regular))
-                    .foregroundColor(.primaryText)
+                Image(systemName: "person.fill")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.primaryText)
+                    .frame(width: 32, height: 32)
+                    .background(Color.tabBarBackground)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.dividerLine, lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
         }
@@ -107,11 +127,14 @@ struct BudgetScreenContent: View {
             .shadow(color: Color.shadowBlack10, radius: 1.5, x: 0, y: 1)
             .padding(.top, 16)
 
-            Button {} label: {
+            Button {
+                onViewAllTransactions()
+            } label: {
                 Text("View all \(viewModel.totalTransactionCount) transactions >")
                     .font(.inter(size: 13))
                     .foregroundColor(recordsSecondary)
             }
+            .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
             .padding(.top, 12)
         }
@@ -120,7 +143,7 @@ struct BudgetScreenContent: View {
 
 #Preview {
     ScrollView {
-        BudgetScreenContent(viewModel: BudgetViewModel(), selectedTab: .constant(.home))
+        BudgetScreenContent(viewModel: BudgetViewModel(store: AppDataStore.preview))
     }
     .background(Color.appBackground)
 }
