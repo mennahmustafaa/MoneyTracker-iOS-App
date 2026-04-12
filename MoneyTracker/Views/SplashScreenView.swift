@@ -11,6 +11,8 @@ struct SplashScreenView: View {
     /// Called on the main actor after the hold + fade-out animation.
     var onFinished: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var contentVisible = false
     @State private var dismissSelf = false
 
@@ -75,15 +77,23 @@ struct SplashScreenView: View {
         }
         .opacity(dismissSelf ? 0 : 1)
         .onAppear {
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+            if reduceMotion {
                 contentVisible = true
+            } else {
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) {
+                    contentVisible = true
+                }
             }
             Task {
                 // Hold on screen so users can read logo + copy (~2.4s), then fade out.
                 try? await Task.sleep(nanoseconds: 2_400_000_000)
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.42)) {
+                    if reduceMotion {
                         dismissSelf = true
+                    } else {
+                        withAnimation(.easeOut(duration: 0.42)) {
+                            dismissSelf = true
+                        }
                     }
                 }
                 try? await Task.sleep(nanoseconds: 450_000_000)

@@ -7,6 +7,7 @@ import SwiftUI
 
 @MainActor
 struct SignUpView: View {
+    @ObservedObject private var session: SessionViewModel
     @StateObject private var viewModel: SignUpViewModel
     let onBack: () -> Void
 
@@ -18,12 +19,24 @@ struct SignUpView: View {
 
     init(session: SessionViewModel, onBack: @escaping () -> Void) {
         self.onBack = onBack
+        self.session = session
         _viewModel = StateObject(wrappedValue: SignUpViewModel(session: session))
     }
 
     var body: some View {
         VStack(spacing: 0) {
             backRow
+            if session.isSupabaseMisconfigured {
+                Text("Add your Supabase anon key in SupabaseConfig.swift or Info.plist (SUPABASE_ANON_KEY).")
+                    .font(.inter(size: 13))
+                    .foregroundColor(Color.signInTitle)
+                    .multilineTextAlignment(.center)
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.expenseRedTint)
+                    .cornerRadius(10)
+                    .padding(.top, 8)
+            }
             logoSection
                 .padding(.top, 6)
             headerSection
@@ -44,6 +57,26 @@ struct SignUpView: View {
         .padding(.top, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.white)
+        .appScreenEnter()
+        .alert(session.authDialog?.title ?? "Notice", isPresented: Binding(
+            get: { session.authDialog != nil },
+            set: { if !$0 { session.clearDialog() } }
+        )) {
+            Button(authAlertButtonTitle, role: .cancel) { session.clearDialog() }
+        } message: {
+            Text(session.authDialog?.message ?? "")
+        }
+    }
+
+    private var authAlertButtonTitle: String {
+        switch session.authDialog?.kind {
+        case .failure:
+            return "Dismiss"
+        case .success:
+            return "Continue"
+        case .information, .none:
+            return "OK"
+        }
     }
 
     private var backRow: some View {
@@ -127,7 +160,7 @@ struct SignUpView: View {
             Text("Email")
                 .font(.inter(size: 13))
                 .foregroundColor(Color.signInMuted)
-            TextField("", text: $viewModel.email, prompt: Text("your@email.com").foregroundColor(Color.signInPlaceholder))
+            TextField("", text: $viewModel.email, prompt: Text("Enter your Email").foregroundColor(Color.signInPlaceholder))
                 .font(.inter(size: 16))
                 .foregroundColor(Color.signInTitle)
                 .keyboardType(.emailAddress)
@@ -213,8 +246,8 @@ struct SignUpView: View {
                 .background(Color.black)
                 .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
-        .opacity(viewModel.canSubmit ? 1 : 0.45)
+      // .buttonStyle(.plain)
+     //   .opacity(viewModel.canSubmit ? 1 : 0.45)
         .allowsHitTesting(viewModel.canSubmit)
         .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 6)
     }

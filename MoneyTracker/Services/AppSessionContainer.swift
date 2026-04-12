@@ -18,7 +18,7 @@ final class AppSessionContainer: ObservableObject {
     let donate: DonateViewModel
     let profile: ProfileViewModel
 
-    init(onLogout: @escaping () -> Void) {
+    init(session: SessionViewModel, onLogout: @escaping () -> Void) {
         let store = AppDataStore()
         self.store = store
         budget = BudgetViewModel(store: store)
@@ -26,6 +26,6 @@ final class AppSessionContainer: ObservableObject {
         shopping = ShoppingViewModel(store: store)
         goals = GoalsViewModel(store: store)
         donate = DonateViewModel(store: store)
-        profile = ProfileViewModel(store: store, onLogout: onLogout)
+        profile = ProfileViewModel(store: store, session: session, onLogout: onLogout)
     }
 }

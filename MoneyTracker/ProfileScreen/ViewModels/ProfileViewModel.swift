@@ -58,17 +58,35 @@ struct ProfileSettingsRow: Identifiable {
 @MainActor
 final class ProfileViewModel: ObservableObject {
     private let store: AppDataStore
+    private let session: SessionViewModel
     private var cancellables = Set<AnyCancellable>()
     private let onLogout: () -> Void
 
-    let displayName = "Demo User"
-    let email = "demo@budgettracker.com"
-    let memberSince = "Member since Dec 2024"
+    /// Registration name (`full_name`), otherwise the part of the email before `@`.
+    var displayName: String {
+        let trimmed = session.profileFullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        let email = session.profileEmail
+        if let at = email.firstIndex(of: "@"), at > email.startIndex {
+            return String(email[..<at])
+        }
+        return "User"
+    }
 
-    init(store: AppDataStore, onLogout: @escaping () -> Void) {
+    /// Account email (same as sign-in).
+    var email: String { session.profileEmail }
+
+    let memberSince = "Member since 2026"
+
+    init(store: AppDataStore, session: SessionViewModel, onLogout: @escaping () -> Void) {
         self.store = store
+        self.session = session
         self.onLogout = onLogout
         store.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        session.objectWillChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)

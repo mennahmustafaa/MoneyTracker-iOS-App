@@ -18,8 +18,22 @@ struct MainTabContainerView: View {
 
     @StateObject private var session: AppSessionContainer
 
-    init(onLogout: @escaping () -> Void) {
-        _session = StateObject(wrappedValue: AppSessionContainer(onLogout: onLogout))
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(session: SessionViewModel, onLogout: @escaping () -> Void) {
+        _session = StateObject(wrappedValue: AppSessionContainer(session: session, onLogout: onLogout))
+    }
+
+    /// Stable identity for tab + profile overlay so only these swaps animate (not scroll).
+    private var mainScrollIdentity: String {
+        if showingProfileFromBudget, selectedTab == .home {
+            return "profile"
+        }
+        return "tab-\(selectedTab.rawValue)"
+    }
+
+    private var tabContentAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.001) : AppMotion.contentFade
     }
 
     var body: some View {
@@ -31,8 +45,11 @@ struct MainTabContainerView: View {
                     screenContent(for: selectedTab)
                 }
             }
+            .id(mainScrollIdentity)
+            .transition(.appTabContent)
             .padding(.bottom, 8)
         }
+        .animation(tabContentAnimation, value: mainScrollIdentity)
         .background(Color.appBackground)
         .sheet(isPresented: $showNewGoalSheet) {
             NewGoalSheet(viewModel: session.goals)
@@ -113,5 +130,5 @@ struct MainTabContainerView: View {
 }
 
 #Preview {
-    MainTabContainerView(onLogout: {})
+    MainTabContainerView(session: SessionViewModel(), onLogout: {})
 }

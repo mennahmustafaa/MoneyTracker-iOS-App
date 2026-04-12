@@ -7,6 +7,7 @@ import SwiftUI
 
 @MainActor
 struct SignInView: View {
+    @ObservedObject private var session: SessionViewModel
     @StateObject private var viewModel: SignInViewModel
 
     @FocusState private var focusedField: Field?
@@ -16,12 +17,17 @@ struct SignInView: View {
     }
 
     init(session: SessionViewModel, onSignUp: @escaping () -> Void = {}) {
+        self.session = session
         _viewModel = StateObject(wrappedValue: SignInViewModel(session: session, onSignUp: onSignUp))
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
+                if session.isSupabaseMisconfigured {
+                    supabaseConfigBanner
+                        .padding(.top, 8)
+                }
                 logoSection
                     .padding(.top, 24)
                 headerSection
@@ -41,8 +47,39 @@ struct SignInView: View {
                     .padding(.bottom, 32)
             }
             .padding(.horizontal, 24)
+            .appScreenEnter()
         }
         .background(Color.appBackground)
+        .alert(session.authDialog?.title ?? "Notice", isPresented: Binding(
+            get: { session.authDialog != nil },
+            set: { if !$0 { session.clearDialog() } }
+        )) {
+            Button(authAlertButtonTitle, role: .cancel) { session.clearDialog() }
+        } message: {
+            Text(session.authDialog?.message ?? "")
+        }
+    }
+
+    private var authAlertButtonTitle: String {
+        switch session.authDialog?.kind {
+        case .failure:
+            return "Dismiss"
+        case .success:
+            return "Continue"
+        case .information, .none:
+            return "OK"
+        }
+    }
+
+    private var supabaseConfigBanner: some View {
+        Text("Add your Supabase anon key in SupabaseConfig.swift or Info.plist (SUPABASE_ANON_KEY).")
+            .font(.inter(size: 13))
+            .foregroundColor(Color.signInTitle)
+            .multilineTextAlignment(.center)
+            .padding(12)
+            .frame(maxWidth: .infinity)
+            .background(Color.expenseRedTint)
+            .cornerRadius(10)
     }
 
     private var logoSection: some View {

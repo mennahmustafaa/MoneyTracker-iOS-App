@@ -85,7 +85,8 @@ struct GoalProgressCardView: View {
                         .fill(Color.donateTrackBackground)
                     Capsule()
                         .fill(Color.backgroundBlack)
-                        .frame(width: geo.size.width * goal.progress)
+                        .frame(width: max(0, geo.size.width * goal.progress))
+                        .animation(AppMotion.valueChange, value: goal.progress)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 7.99472, maxHeight: 7.99472, alignment: .topLeading)

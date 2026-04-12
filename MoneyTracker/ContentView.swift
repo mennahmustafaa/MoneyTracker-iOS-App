@@ -16,9 +16,28 @@ struct ContentView: View {
     @State private var showSignUp = false
     @State private var showSplash = true
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Drives lightweight transitions between onboarding, sign-in/up, and main tabs.
+    private var rootPhase: Int {
+        if showOnboarding { return 0 }
+        if !sessionViewModel.isSignedIn { return showSignUp ? 1 : 2 }
+        return 3
+    }
+
+    private var splashAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.001) : AppMotion.overlay
+    }
+
+    private var screenAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.001) : AppMotion.screenTransition
+    }
+
     var body: some View {
         ZStack {
             rootContent
+                .id(rootPhase)
+                .transition(.appScreen)
 
             if showSplash {
                 SplashScreenView {
@@ -28,7 +47,8 @@ struct ContentView: View {
                 .zIndex(1)
             }
         }
-        .animation(.easeOut(duration: 0.25), value: showSplash)
+        .animation(screenAnimation, value: rootPhase)
+        .animation(splashAnimation, value: showSplash)
     }
 
     @ViewBuilder
@@ -49,7 +69,7 @@ struct ContentView: View {
                     }
                 }
             } else {
-                MainTabContainerView(onLogout: {
+                MainTabContainerView(session: sessionViewModel, onLogout: {
                     sessionViewModel.signOut()
                     showSignUp = false
                 })

@@ -7,7 +7,7 @@ import Combine
 import Foundation
 
 @MainActor
-/// Create-account form. Demo: signs in when fields are valid and passwords match.
+/// Sign-up form → Supabase `signUp` (stores `full_name` in user metadata).
 final class SignUpViewModel: ObservableObject {
     @Published var fullName: String = ""
     @Published var email: String = ""
@@ -36,10 +36,14 @@ final class SignUpViewModel: ObservableObject {
 
     func createAccount() {
         guard canSubmit else { return }
-        session.signIn()
+        let name = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let mail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task {
+            await session.signUpWithEmail(fullName: name, email: mail, password: password)
+        }
     }
 
     func continueWithGoogle() {
-        session.signIn()
+        session.signInWithGoogle()
     }
 }

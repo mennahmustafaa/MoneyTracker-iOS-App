@@ -24,6 +24,7 @@ struct BudgetCardView: View {
             Text(formattedBalance)
                 .font(.arimo(size: 40, weight: .bold))
                 .foregroundColor(.whiteText)
+                .appAnimatedAmount(value: budgetSummary.currentBalance)
 
             HStack(alignment: .center, spacing: 16) {
                 IncomeExpenseSubCardView(

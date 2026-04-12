@@ -52,4 +52,24 @@ final class DonateViewModel: ObservableObject {
             iconEmoji: iconEmoji
         )
     }
+
+    func updateDonation(
+        id: UUID,
+        amount: Double,
+        organization: String,
+        category: String,
+        isRecurring: Bool,
+        date: Date,
+        iconEmoji: String?
+    ) {
+        store.updateDonation(
+            id: id,
+            amount: amount,
+            organization: organization,
+            category: category,
+            isRecurring: isRecurring,
+            date: date,
+            iconEmoji: iconEmoji
+        )
+    }
 }

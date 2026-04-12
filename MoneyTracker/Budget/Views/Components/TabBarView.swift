@@ -41,6 +41,12 @@ struct TabBarItemView: View {
     let tab: TabItem
     let isSelected: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var selectionAnimation: Animation {
+        reduceMotion ? .easeOut(duration: 0.001) : AppMotion.tab
+    }
+
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: tab.systemImage)
@@ -56,6 +62,7 @@ struct TabBarItemView: View {
                 .foregroundColor(isSelected ? .primaryText : .secondaryText)
         }
         .frame(maxWidth: .infinity)
+        .animation(selectionAnimation, value: isSelected)
     }
 }
 

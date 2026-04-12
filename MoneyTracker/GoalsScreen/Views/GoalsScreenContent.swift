@@ -44,22 +44,21 @@ struct GoalsScreenContent: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .confirmationDialog(
+        .alert(
             "Delete this goal?",
             isPresented: Binding(
                 get: { goalPendingDelete != nil },
                 set: { if !$0 { goalPendingDelete = nil } }
-            ),
-            titleVisibility: .visible
+            )
         ) {
-            Button("Yes", role: .destructive) {
+            Button("Cancel", role: .cancel) {
+                goalPendingDelete = nil
+            }
+            Button("Delete", role: .destructive) {
                 if let g = goalPendingDelete {
                     viewModel.deleteGoal(id: g.id)
                     onGoalDeleted(g.id)
                 }
-                goalPendingDelete = nil
-            }
-            Button("No", role: .cancel) {
                 goalPendingDelete = nil
             }
         } message: {

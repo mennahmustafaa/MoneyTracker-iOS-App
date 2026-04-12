@@ -269,7 +269,9 @@ struct ProfileScreenContent: View {
 
 #Preview {
     ScrollView {
-        ProfileScreenContent(viewModel: ProfileViewModel(store: AppDataStore.preview, onLogout: {}))
+        ProfileScreenContent(
+            viewModel: ProfileViewModel(store: AppDataStore.preview, session: SessionViewModel(), onLogout: {})
+        )
     }
     .background(Color.appBackground)
 }

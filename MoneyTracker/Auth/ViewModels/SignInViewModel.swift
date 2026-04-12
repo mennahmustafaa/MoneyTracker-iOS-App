@@ -7,7 +7,7 @@ import Combine
 import Foundation
 
 @MainActor
-/// Sign-in form state and actions. Demo sign-in accepts any non-empty email + password.
+/// Sign-in form → `SessionViewModel` + Supabase Auth.
 final class SignInViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
@@ -31,14 +31,26 @@ final class SignInViewModel: ObservableObject {
 
     func signIn() {
         guard canSubmit else { return }
-        session.signIn()
+        let mail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task {
+            await session.signInWithEmail(mail, password: password)
+        }
     }
 
     func continueWithGoogle() {
-        session.signIn()
+        session.signInWithGoogle()
     }
 
-    func forgotPassword() {}
+    func forgotPassword() {
+        let mail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !mail.isEmpty else {
+            session.promptForgotPasswordEmail()
+            return
+        }
+        Task {
+            await session.resetPassword(email: mail)
+        }
+    }
 
     func signUp() {
         onSignUp()

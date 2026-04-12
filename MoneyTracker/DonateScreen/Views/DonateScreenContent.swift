@@ -13,6 +13,8 @@ struct DonateScreenContent: View {
     @ObservedObject var viewModel: DonateViewModel
     var onAddDonationTap: () -> Void
 
+    @State private var editingDonation: DonationRecord?
+
     init(viewModel: DonateViewModel, onAddDonationTap: @escaping () -> Void = {}) {
         _viewModel = ObservedObject(wrappedValue: viewModel)
         self.onAddDonationTap = onAddDonationTap
@@ -33,6 +35,11 @@ struct DonateScreenContent: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 16)
+        .sheet(item: $editingDonation) { donation in
+            NewDonationSheet(viewModel: viewModel, editingDonation: donation)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var headerSection: some View {
@@ -80,7 +87,9 @@ struct DonateScreenContent: View {
     private var historySection: some View {
         VStack(spacing: 0) {
             ForEach(Array(viewModel.donations.enumerated()), id: \.element.id) { index, donation in
-                DonationRecordRowView(donation: donation)
+                DonationRecordRowView(donation: donation) {
+                    editingDonation = donation
+                }
                 if index < viewModel.donations.count - 1 {
                     Divider().background(Color.dividerLine)
                 }

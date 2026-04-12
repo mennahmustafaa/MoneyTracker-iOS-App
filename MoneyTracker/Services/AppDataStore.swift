@@ -153,6 +153,52 @@ final class AppDataStore: ObservableObject {
         save()
     }
 
+    func updateDonation(
+        id: UUID,
+        amount: Double,
+        organization: String,
+        category: String,
+        isRecurring: Bool,
+        date: Date,
+        iconEmoji: String?
+    ) {
+        guard let idx = donations.firstIndex(where: { $0.id == id }) else { return }
+        let old = donations[idx]
+        subtractFromCause(cause: old.cause, amount: old.amount)
+
+        let formatter = Self.donationDateFormatter
+        let dateStr = formatter.string(from: date)
+        let frequency: String = {
+            if isRecurring { return "monthly" }
+            if old.frequency == "yearly" { return "yearly" }
+            return "one-time"
+        }()
+        let org = organization.trimmingCharacters(in: .whitespaces)
+        let cause = category.trimmingCharacters(in: .whitespaces)
+        let record = DonationRecord(
+            id: id,
+            organization: org.isEmpty ? "Donation" : org,
+            cause: cause.isEmpty ? "General" : cause,
+            date: dateStr,
+            frequency: frequency,
+            amount: amount,
+            iconEmoji: iconEmoji
+        )
+        donations[idx] = record
+        bumpCauseForDonation(cause: record.cause, addedAmount: amount)
+        save()
+    }
+
+    /// Removes a donation’s amount from its cause bucket (before replacing the row on edit).
+    private func subtractFromCause(cause name: String, amount: Double) {
+        guard let idx = causes.firstIndex(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) else { return }
+        let c = causes[idx]
+        let newAmount = max(0, c.amount - amount)
+        let denom = max(newAmount * 2.5, 1)
+        let progress = min(1, newAmount / denom)
+        causes[idx] = ImpactCause(id: c.id, name: c.name, amount: newAmount, progress: progress)
+    }
+
     // MARK: - Profile aggregates
 
     func paymentMethodTotals() -> [(name: String, amount: Double)] {

@@ -7,10 +7,13 @@
 
 import SwiftUI
 
-/// New donation form; requires a positive amount to enable submit.
+/// Add or edit a donation; same layout and styling as the rest of the app.
 struct NewDonationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: DonateViewModel
+
+    /// When set, the sheet pre-fills from this record and saves via `updateDonation`.
+    var editingDonation: DonationRecord? = nil
 
     @State private var amountText = ""
     @State private var organizationText = ""
@@ -54,6 +57,14 @@ struct NewDonationSheet: View {
         (parsedAmount ?? 0) > 0
     }
 
+    private var sheetTitle: String {
+        editingDonation == nil ? "New Donation" : "Edit Donation"
+    }
+
+    private var primaryButtonTitle: String {
+        editingDonation == nil ? "Add Donation" : "Save Changes"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             dragHandle
@@ -89,6 +100,46 @@ struct NewDonationSheet: View {
         .sheet(isPresented: $showEmojiPicker) {
             emojiPickerSheet
         }
+        .onAppear {
+            if let d = editingDonation {
+                applyEditingDonation(d)
+            }
+        }
+    }
+
+    private func applyEditingDonation(_ d: DonationRecord) {
+        amountText = Self.formatAmount(d.amount)
+        organizationText = d.organization
+        if Self.categories.contains(d.cause) {
+            category = d.cause
+        } else {
+            category = "Other"
+        }
+        let trimmed = d.iconEmoji?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        iconEmoji = trimmed.isEmpty ? "❤️" : trimmed
+        isRecurring = (d.frequency == "monthly")
+        date = Self.dateFromDonationDisplayString(d.date)
+        notes = ""
+    }
+
+    private static func formatAmount(_ value: Double) -> String {
+        if value == floor(value) {
+            return String(format: "%.0f", value)
+        }
+        return String(format: "%.2f", value)
+    }
+
+    /// Parses dates stored as `"MMM d"` (e.g. `Dec 1`) using the current year.
+    private static func dateFromDonationDisplayString(_ s: String) -> Date {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateFormat = "MMM d"
+        guard let partial = f.date(from: s) else { return Date() }
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        var comps = cal.dateComponents([.month, .day], from: partial)
+        comps.year = year
+        return cal.date(from: comps) ?? Date()
     }
 
     private var dragHandle: some View {
@@ -100,7 +151,7 @@ struct NewDonationSheet: View {
 
     private var headerBar: some View {
         HStack(alignment: .center) {
-            Text("New Donation")
+            Text(sheetTitle)
                 .font(.inter(size: 28, weight: .bold))
                 .kerning(0.38281)
                 .foregroundColor(.black)
@@ -287,7 +338,7 @@ struct NewDonationSheet: View {
         Button {
             submit()
         } label: {
-            Text("Add Donation")
+            Text(primaryButtonTitle)
                 .font(.inter(size: 17, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
@@ -306,18 +357,32 @@ struct NewDonationSheet: View {
     private func submit() {
         guard let amt = parsedAmount, amt > 0 else { return }
         let trimmedEmoji = iconEmoji.trimmingCharacters(in: .whitespacesAndNewlines)
-        viewModel.addDonation(
-            amount: amt,
-            organization: organizationText,
-            category: category.isEmpty ? "Other" : category,
-            isRecurring: isRecurring,
-            date: date,
-            iconEmoji: trimmedEmoji.isEmpty ? nil : trimmedEmoji
-        )
+        let cat = category.isEmpty ? "Other" : category
+        let emoji = trimmedEmoji.isEmpty ? nil : trimmedEmoji
+        if let existing = editingDonation {
+            viewModel.updateDonation(
+                id: existing.id,
+                amount: amt,
+                organization: organizationText,
+                category: cat,
+                isRecurring: isRecurring,
+                date: date,
+                iconEmoji: emoji
+            )
+        } else {
+            viewModel.addDonation(
+                amount: amt,
+                organization: organizationText,
+                category: cat,
+                isRecurring: isRecurring,
+                date: date,
+                iconEmoji: emoji
+            )
+        }
         dismiss()
     }
 }
 
 #Preview {
-    NewDonationSheet(viewModel: DonateViewModel(store: AppDataStore.preview))
+    NewDonationSheet(viewModel: DonateViewModel(store: AppDataStore.preview), editingDonation: nil)
 }

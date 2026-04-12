@@ -27,21 +27,20 @@ struct HistoryScreenContent: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 16)
-        .confirmationDialog(
+        .alert(
             "Delete this transaction?",
             isPresented: Binding(
                 get: { transactionPendingDelete != nil },
                 set: { if !$0 { transactionPendingDelete = nil } }
-            ),
-            titleVisibility: .visible
+            )
         ) {
-            Button("Yes", role: .destructive) {
+            Button("Cancel", role: .cancel) {
+                transactionPendingDelete = nil
+            }
+            Button("Delete", role: .destructive) {
                 if let t = transactionPendingDelete {
                     viewModel.deleteTransaction(id: t.id)
                 }
-                transactionPendingDelete = nil
-            }
-            Button("No", role: .cancel) {
                 transactionPendingDelete = nil
             }
         } message: {

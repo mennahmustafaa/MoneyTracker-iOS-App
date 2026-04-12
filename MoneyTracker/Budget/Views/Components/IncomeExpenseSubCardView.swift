@@ -37,6 +37,7 @@ struct IncomeExpenseSubCardView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .appAnimatedAmount(value: amount)
         }
         .padding(.horizontal, 15.98944)
         .padding(.top, 15.98944)

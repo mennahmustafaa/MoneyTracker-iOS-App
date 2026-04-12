@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		30C42AF42F8C399B00E44A43 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 30C42AF32F8C399B00E44A43 /* Auth */; };
+		30C42AF42F8C399B00E44A43 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 30C42AF32F8C399B00E44A43 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				30C42AF42F8C399B00E44A43 /* Auth in Frameworks */,
+				30C42AF42F8C399B00E44A43 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,7 +70,7 @@
 			);
 			name = MoneyTracker;
 			packageProductDependencies = (
-				30C42AF32F8C399B00E44A43 /* Auth */,
+				30C42AF32F8C399B00E44A43 /* Supabase */,
 			);
 			productName = MoneyTracker;
 			productReference = 3071BEA52F43EA4C00BEE300 /* MoneyTracker.app */;
@@ -350,10 +350,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		30C42AF32F8C399B00E44A43 /* Auth */ = {
+		30C42AF32F8C399B00E44A43 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 30C42AF22F8C399B00E44A43 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

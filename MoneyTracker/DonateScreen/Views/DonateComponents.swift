@@ -60,13 +60,15 @@ struct DonateSummaryCardView: View {
             Text(CurrencyFormat.dollarString(from: total))
                 .font(.arimo(size: 40, weight: .bold))
                 .foregroundColor(.whiteText)
+                .appAnimatedAmount(value: total)
 
             HStack(spacing: 16) {
-                summarySmallCard(title: "Organizations", value: "\(count)", icon: "heart")
+                summarySmallCard(title: "Organizations", value: "\(count)", icon: "heart", animateValue: count)
                 summarySmallCard(
                     title: "Monthly",
                     value: CurrencyFormat.dollarString(from: monthlyAverage),
-                    icon: "calendar"
+                    icon: "calendar",
+                    animateValue: monthlyAverage
                 )
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -82,7 +84,7 @@ struct DonateSummaryCardView: View {
         .shadow(color: Color.shadowBlack10, radius: 7.5, x: 0, y: 10)
     }
 
-    private func summarySmallCard(title: String, value: String, icon: String) -> some View {
+    private func summarySmallCard<V: Equatable>(title: String, value: String, icon: String, animateValue: V) -> some View {
         VStack(alignment: .leading, spacing: 7.99474) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
@@ -97,6 +99,7 @@ struct DonateSummaryCardView: View {
             Text(value)
                 .font(.arimo(size: 20, weight: .bold))
                 .foregroundColor(.whiteText)
+                .appAnimatedAmount(value: animateValue)
         }
         .padding(.horizontal, 15.98944)
         .padding(.top, 15.98941)
@@ -130,7 +133,8 @@ struct ImpactCauseRowView: View {
                         .fill(Color.donateTrackBackground)
                     Capsule()
                         .fill(Color.donateAccentRed)
-                        .frame(width: geo.size.width * cause.progress)
+                        .frame(width: max(0, geo.size.width * cause.progress))
+                        .animation(AppMotion.valueChange, value: cause.progress)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 3.99736, maxHeight: 3.99736)
@@ -142,9 +146,10 @@ struct ImpactCauseRowView: View {
     }
 }
 
-/// Past donation: org, amount, cause • date • frequency.
+/// Past donation: org, amount, cause • date • frequency. Edit opens the same form as new donation.
 struct DonationRecordRowView: View {
     let donation: DonationRecord
+    var onEdit: () -> Void = {}
 
     var body: some View {
         HStack(alignment: .center, spacing: 11.99208) {
@@ -184,6 +189,17 @@ struct DonationRecordRowView: View {
                     .frame(height: 19.50864, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: onEdit) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.secondaryText)
+                    .frame(width: 32, height: 32)
+                    .background(Color.segmentTrackBackground)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Edit donation")
 
             Image("deleteIcon")
                 .resizable()
