@@ -7,15 +7,21 @@
 
 import SwiftUI
 
+/// App root: onboarding → sign in → main tabs. Profile **Log out** returns to sign in.
 struct ContentView: View {
+    @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @StateObject private var sessionViewModel = SessionViewModel()
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if !onboardingViewModel.hasCompletedOnboarding {
+                OnboardingView(viewModel: onboardingViewModel)
+            } else if !sessionViewModel.isSignedIn {
+                SignInView(session: sessionViewModel)
+            } else {
+                MainTabContainerView(onLogout: { sessionViewModel.signOut() })
+            }
         }
-        .padding()
     }
 }
 
